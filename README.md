@@ -17,7 +17,8 @@ Pour ce projet, trois approches seront explorées, implémentées puis comparée
 - **Modèles de Diffusion** : Une méthode de pointe, produisant les transitions les plus harmonieuses et un visage très crédible mais nécessitant une puissance de calcul plus élevée pour l'inférence.
 
 ## Initialisation et Workflow
-- Les données utilisées pour entraîner la preuve de concept (PoC) initial proviendront du dataset **CelebA**. Des masques seront appliqués de manière procédurale à des images haute définition pour générer le jeu d'entraînement.
+
+- Les données utilisées pour entraîner la preuve de concept (PoC) initial proviendront du dataset **CelebA** ainsi que du [dataset de visages masqués disponible sur Mendeley Data](https://data.mendeley.com/datasets/xyc9h3wjxf/2). Des masques seront appliqués de manière procédurale à des images haute définition pour générer le jeu d'entraînement.
 - Le projet progresse de manière itérative :
   1. Préparation du pipeline de données (masquage/dégradation algorithmique).
   2. Création de la *Baseline* (Autoencodeurs).

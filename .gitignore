@@ -54,4 +54,7 @@ MANIFEST
 
 # OS files
 .DS_Store
-Thumbs.db
+Thumbs.dbdata/
+
+data/Masked/*
+data/Unmasked/*
