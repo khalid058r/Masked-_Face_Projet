@@ -56,5 +56,5 @@ MANIFEST
 .DS_Store
 Thumbs.dbdata/
 
-data/Masked/*
-data/Unmasked/*
+data/
+src/data/
