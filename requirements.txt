@@ -1,0 +1,6 @@
+torch>=2.0.0
+torchvision
+pandas
+numpy
+matplotlib
+Pillow

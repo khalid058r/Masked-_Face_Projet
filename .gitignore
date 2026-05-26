@@ -54,7 +54,9 @@ MANIFEST
 
 # OS files
 .DS_Store
-Thumbs.dbdata/
+Thumbs.db
 
-data/
-src/data/
+# Dataset (raw images, too large for git)
+dataset/
+data/raw/
+data/processed/
