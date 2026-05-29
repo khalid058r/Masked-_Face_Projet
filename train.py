@@ -4,12 +4,13 @@ import pandas as pd
 import torch
 
 from src.data.indexer import build_index
-from src.training.trainer import train_model
+from src.training.trainer import train_model, train_gan
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Training script for Masked Face Super Resolution")
     parser.add_argument("--data_dir", type=str, required=True, help="Path to the dataset directory")
     parser.add_argument("--task", type=str, choices=["inpainting", "sr"], default="inpainting", help="Task to train: inpainting or sr")
+    parser.add_argument("--model_type", type=str, choices=["unet", "gan"], default="unet", help="Architecture to train")
     parser.add_argument("--epochs", type=int, default=10, help="Number of training epochs")
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size")
     parser.add_argument("--lr", type=float, default=2e-4, help="Learning rate")
@@ -36,12 +37,12 @@ def main():
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print(f"--- Starting Training ---")
     print(f"Task: {args.task}")
+    print(f"Model Type: {args.model_type.upper()}")
     print(f"Device: {device}")
     
     # 2. Build Index
     data_path = Path(args.data_dir)
     print(f"Building index from {data_path}...")
-    # By default, looking for part1 and part2 folders
     index_df = build_index(data_path, parts=['part1', 'part2'])
     print(f"Found {len(index_df)} images.")
     
@@ -51,13 +52,18 @@ def main():
         
     # 3. Train
     print("Starting training loop...")
-    model, history = train_model(task=args.task, cfg=config, index_df=index_df, device=device)
-    
-    # 4. Save best model
     out_dir = Path("checkpoints")
     out_dir.mkdir(exist_ok=True)
-    save_path = out_dir / f"unet_{args.task}_epochs_{args.epochs}.pt"
-    torch.save(model.state_dict(), save_path)
+    
+    if args.model_type == "gan":
+        generator, discriminator, history = train_gan(task=args.task, cfg=config, index_df=index_df, device=device)
+        save_path = out_dir / f"gan_{args.task}_epochs_{args.epochs}.pt"
+        torch.save({'model': generator.state_dict(), 'discriminator': discriminator.state_dict()}, save_path)
+    else:
+        model, history = train_model(task=args.task, cfg=config, index_df=index_df, device=device)
+        save_path = out_dir / f"unet_{args.task}_epochs_{args.epochs}.pt"
+        torch.save({'model': model.state_dict()}, save_path)
+        
     print(f"Model successfully saved to {save_path}")
 
 if __name__ == "__main__":
