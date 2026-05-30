@@ -60,3 +60,14 @@ Thumbs.db
 dataset/
 data/raw/
 data/processed/
+
+# Résultats Kaggle (modèles lourds, ne pas pousser sur GitHub)
+resultatKaggle/
+resultatKaggle (2)/
+resultatKaggle.zip
+checkpoints/
+
+# Images de test locales
+tesr.jpg
+*.webp
+*.jpeg

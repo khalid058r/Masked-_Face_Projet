@@ -14,6 +14,8 @@ def parse_args():
     parser.add_argument("--epochs", type=int, default=10, help="Number of training epochs")
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size")
     parser.add_argument("--lr", type=float, default=2e-4, help="Learning rate")
+    parser.add_argument("--recolor_augment", action="store_true",
+                        help="Recolorie aléatoirement les masques pour généraliser à toutes les couleurs")
     return parser.parse_args()
 
 def main():
@@ -31,7 +33,8 @@ def main():
         'base_ch': 32,
         'lambda_perc': 0.1,
         'use_amp': torch.cuda.is_available(),
-        'val_subset': 500
+        'val_subset': 500,
+        'recolor_augment': args.recolor_augment,
     }
     
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
