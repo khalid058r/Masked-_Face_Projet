@@ -65,6 +65,9 @@ data/processed/
 resultatKaggle/
 resultatKaggle (2)/
 resultatKaggle.zip
+output_03_complet_baseline_and_gan/
+output_03_complet_baseline_and_gan.zip
+models_nouveau_update_overfeating/
 checkpoints/
 
 # Images de test locales
