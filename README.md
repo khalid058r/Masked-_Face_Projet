@@ -1,134 +1,134 @@
+"""README mis à jour pour correspondre à l'arborescence réelle du dossier Masked-_Face_Projet.
+Patch : simplification et alignement des sections principales (notebooks, scripts, src, tests, dataset).
+"""
+
 # 🎭 Masked Face Super Resolution
 
 > Reconstruction et super-résolution de visages partiellement masqués via deep learning.
-> Pipeline complet : EDA → Prétraitement → Baseline U-Net → GAN Pix2Pix.
+
+Ce dépôt (dossier: `Masked-_Face_Projet`) contient les notebooks, le code source, les scripts d'entraînement et les données indexées utilisés pour expérimenter l'inpainting et la super-résolution conditionnée sur une image masquée.
 
 ---
 
-## 📋 Table des matières
+## 📋 Aperçu rapide
 
-1. [Vue d'ensemble](#-vue-densemble)
-2. [Dataset](#-dataset)
-3. [Architecture du pipeline](#-architecture-du-pipeline)
-4. [Notebooks](#-notebooks)
-5. [Tâches modélisées](#-tâches-modélisées)
-6. [Résultats](#-résultats)
-7. [Structure des fichiers](#-structure-des-fichiers)
-8. [Installation & utilisation](#-installation--utilisation)
-9. [Choix techniques](#-choix-techniques)
-10. [Prochaines étapes](#-prochaines-étapes)
+- Notebooks : exploration, prétraitement, baselines et GAN
+- Scripts : `app.py`, `train.py` (entrées pour entraînement / inference)
+- Dataset indexé : `dataset_index.csv`
+- Source : `src/` (dataset, models, training, utils)
+- Tests unitaires : `tests/`
 
 ---
 
-## 🎯 Vue d'ensemble
-
-Ce projet vise à **reconstruire la partie cachée du visage d'une personne portant un masque** (chirurgical, N95, FFP, etc.) en générant une version plausible du visage non-masqué. Deux variantes sont étudiées en parallèle :
-
-- **Inpainting** : entrée et sortie à la même résolution (128×128)
-- **Super-résolution + inpainting** : entrée basse résolution (64×64) → sortie haute résolution (128×128)
-
-Le pipeline progresse par étapes, chacune apportant une amélioration mesurable :
+## 🗂 Structure du projet
 
 ```
-EDA  →  Prétraitement  →  Baseline U-Net  →  GAN Pix2Pix
-                              (24 dB)           (24 dB + textures réalistes)
+Masked-_Face_Projet/
+├── app.py
+├── train.py
+├── dataset_index.csv
+├── requirements.txt
+├── README.md
+├── dataset/
+│   ├── part1/...
+│   ├── part2/...
+│   └── part4/...
+├── docs/
+│   └── ARCHITECTURE.md
+├── notebooks/
+│   ├── 01_EDA.ipynb
+│   ├── 02-preprocessing.ipynb
+│   ├── 03-baseline.ipynb
+│   └── 03-complete-baseline-and-gan.ipynb
+├── src/
+│   ├── inference.py
+│   ├── data/
+│   │   ├── dataset.py
+│   │   └── indexer.py
+│   ├── models/
+│   │   ├── diffusion.py
+│   │   ├── discriminator.py
+│   │   └── unet.py
+│   ├── training/
+│   │   ├── losses.py
+│   │   └── trainer.py
+│   └── utils/
+│       ├── metrics.py
+│       └── visualization.py
+└── tests/
+    ├── test_dataset.py
+    └── test_models.py
+```
+
+Notes : la structure ci‑dessus reflète les fichiers présents dans le dossier. Les parties du dataset sont rangées sous `dataset/` et indexées par `dataset_index.csv`.
+
+---
+
+## 🧭 Notebooks principaux
+
+- `01_EDA.ipynb` — analyse exploratoire et sanity checks
+- `02-preprocessing.ipynb` — indexation des paires masked/unmasked et définition de la classe `MaskedFaceDataset`
+- `03-baseline.ipynb` — entraînement des baselines (autoencoder / U-Net)
+- `03-complete-baseline-and-gan.ipynb` — fine-tuning GAN (Pix2Pix) depuis le baseline
+
+---
+
+## ⚙️ Installation rapide
+
+1. Créer un environnement Python (recommandé)
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
+
+2. Vérifier l'index des paires
+
+```python
+from src.data.indexer import load_index
+print(load_index('dataset_index.csv').shape)
+```
+
+3. Lancer un entraînement rapide (exemple)
+
+```powershell
+python train.py --config configs/baseline.yaml
+```
+
+-- Ajustez les commandes selon vos configurations locales (GPU/CPU).
+
+---
+
+## 🧪 Tests
+
+Exécuter les tests unitaires avec `pytest` depuis la racine `Masked-_Face_Projet` :
+
+```powershell
+pip install pytest
+pytest -q
 ```
 
 ---
 
-## 📦 Dataset
+## 📌 Points importants et choix techniques (résumé)
 
-**Source** : `ikramelmenhi/dataset` (Upload Kaggle, basé sur `splitted-masked-ffhq-cropped`)
-
-### Caractéristiques
-- **50 255 images** au total, format PNG, **128×128 RGB**
-- Réparties en **3 parts** × {`train`, `val`, `test`} × {`masked`, `unmasked`}
-- Visages déjà recadrés (cropped) — pas de détection faciale nécessaire
-- Masques **réels** photographiés (chirurgicaux bleus, N95 blancs, FFP, masques noirs) — pas de masques synthétiques
-
-### Structure utilisée
-```
-dataset/
-├── part1/
-│   ├── train/  {masked,unmasked}/  ~8 000 images chacun
-│   ├── val/    {masked,unmasked}/  ~1 000 images chacun
-│   └── test/   {masked,unmasked}/  ~1 000 images chacun
-├── part2/  (même structure que part1)
-└── part3/  (pas de val, exclu du projet)
-```
-
-### Pairing
-Les paires `masked/X.png` ↔ `unmasked/X.png` partagent un même filename mais **ne sont pas la même personne**. Le modèle n'apprend donc pas la reconstruction d'identité, mais la **génération de visages plausibles** cohérents avec les zones visibles (yeux, front, cheveux, pose).
-
-### Choix : exclure part3
-- Part3 n'a pas de split `val`, ce qui empêche un suivi propre de l'overfitting
-- Distribution potentiellement différente
-- Part1 + part2 fournissent déjà **20 000 paires propres et homogènes**
+- Normalisation des images en `[-1, 1]` (compatible `tanh` en sortie)
+- U-Net avec skip connections pour préserver les hautes fréquences
+- Sélection finale des modèles GAN basée sur LPIPS pour la qualité perceptuelle
+- AMP recommandé sur GPU pour accélérer et réduire la VRAM
 
 ---
 
-## 🏗️ Architecture du pipeline
+## 🚀 Prochaines étapes (suggestions)
 
-```
-┌─────────────────┐
-│   01_EDA.ipynb  │  Exploration : volumétrie, appariement, stats pixel,
-└────────┬────────┘  histogrammes, image moyenne, comparaison inter-parts
-         │
-         ▼
-┌──────────────────────────┐
-│ 02-preprocessing.ipynb   │  Indexation des paires valides → CSV
-└────────┬─────────────────┘  Classe `MaskedFaceDataset`
-         │                     DataLoaders pour 2 tâches en parallèle
-         │
-         ├─────────────────────────┐
-         ▼                         ▼
-┌──────────────────────┐  ┌──────────────────────┐
-│  03_baseline.ipynb   │  │ 04_baseline_unet.ipynb │
-│                      │  │                      │
-│ Baseline Autoencoder │  │ Baseline U-Net       │
-│ ├─ inpainting 128    │  │ ├─ inpainting 128    │
-│ └─ sr 64 → 128       │  │ └─ sr 64 → 128       │
-└────────┬─────────────┘  └────────┬─────────────┘
-         │                         │
-         └──┬──────────────────────┘
-            │
-            ▼
-┌────────────────────────┐
-│      05-gan.ipynb      │
-│                        │
-│ GAN Pix2Pix            │
-│ ├─ G init depuis U-Net │
-│ ├─ inpainting fine-tune│
-│ └─ sr fine-tune        │
-└────────────────────────┘
-```
+- Ajouter un script `evaluate.py` pour automatiser PSNR/SSIM/LPIPS sur le test set
+- Intégrer des notebooks de visualisation des résultats `notebooks/vis_results.ipynb`
+- Expérimenter la normalisation fine et les augmentations pendant l'entraînement
 
 ---
 
-## 📓 Notebooks
-
-### 1. `EDA.ipynb` — Analyse exploratoire
-
-12 sections d'investigation du dataset :
-
-| Section | Investigation |
-|---|---|
-| Structure & arborescence | Vérification de l'organisation des dossiers |
-| Volumétrie | 50 255 images, ventilées par part/split/catégorie |
-| Appariement masked ↔ unmasked | **97.7 %** de paires alignées par filename |
-| Propriétés des images | Dimensions 128×128 uniforme, mode RGB, taille de fichier |
-| Visualisation de paires | Affichage de `masked` vs `unmasked` côte-à-côte |
-| Statistiques pixel | Moyennes/écarts-types par canal RGB |
-| Histogrammes RGB | Distribution des intensités masked vs unmasked |
-| Image moyenne | Heatmap localisant la zone du masque (ratio 14× en bas) |
-| Comparaison inter-parts | Homogénéité des 3 parts |
-
-**Conclusions de l'EDA :**
-- Pas besoin de redimensionnement (128×128 uniforme)
-- Pas besoin de conversion RGB
-- Pas besoin de détection faciale (déjà cropped)
-- 575 images orphelines à filtrer
-- Part3 sans split `val` → exclu
+Si vous souhaitez que j'adapte davantage le README (liens vers notebooks, exemples d'inférence, badges CI, ou version anglaise), dites-le et je le mets à jour.
 
 ### 2. `02_preprocessing.ipynb` — Prétraitement
 
